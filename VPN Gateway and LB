@@ -1,0 +1,74 @@
+# Configure the Azure provider
+provider "azurerm" {
+  features {}
+}
+
+# Define the Azure resource group
+resource "azurerm_resource_group" "example" {
+  name     = "example-vpn-lb-rg"
+  location = "East US"  # Change this to your desired Azure region
+}
+
+# Define the Virtual Network (VNet) and subnet
+resource "azurerm_virtual_network" "example" {
+  name                = "example-vnet"
+  address_space       = ["10.0.0.0/16"]  # Adjust the address space as needed
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+resource "azurerm_subnet" "example" {
+  name                 = "example-subnet"
+  resource_group_name  = azurerm_resource_group.example.name
+  virtual_network_name = azurerm_virtual_network.example.name
+  address_prefixes     = ["10.0.1.0/24"]  # Adjust the subnet address space as needed
+}
+
+# Create a Public IP address for the VPN Gateway
+resource "azurerm_public_ip" "example" {
+  name                = "example-public-ip"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  allocation_method   = "Dynamic"
+}
+
+# Create a VPN Gateway
+resource "azurerm_virtual_network_gateway" "example" {
+  name                = "example-vpn-gateway"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  type                = "Vpn"
+  vpn_type            = "RouteBased"
+  sku {
+    name     = "VpnGw1"
+    tier     = "VpnGw1"
+    capacity = 2
+  }
+
+  active_active {
+    enabled = false
+  }
+
+  ip_configuration {
+    name                          = "example-ip-configuration"
+    subnet_id                     = azurerm_subnet.example.id
+    public_ip_address_id           = azurerm_public_ip.example.id
+  }
+}
+
+# Create a Standard Load Balancer
+resource "azurerm_lb" "example" {
+  name                = "example-lb"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  sku                 = "Standard"
+}
+
+# Output Resource Information
+output "vpn_gateway_id" {
+  value = azurerm_virtual_network_gateway.example.id
+}
+
+output "load_balancer_id" {
+  value = azurerm_lb.example.id
+}
