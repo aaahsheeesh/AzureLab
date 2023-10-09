@@ -1,0 +1,55 @@
+# Configure the Azure provider
+provider "azurerm" {
+  features {}
+}
+
+# Define the Azure resource group
+resource "azurerm_resource_group" "example" {
+  name     = "example-firewall-rg"
+  location = "East US"  # Change this to your desired Azure region
+}
+
+# Define the Firewall Policy
+resource "azurerm_firewall_policy" "example" {
+  name                = "example-firewall-policy"
+  resource_group_name = azurerm_resource_group.example.name
+
+  # Define policy rules, rule collections, and rule groups here as needed.
+  # For example:
+  # ...
+  # rule_collection {
+  #   name    = "example-rule-collection"
+  #   action  = "Allow"
+  #   priority = 100
+  #   rule {
+  #     name = "example-rule"
+  #     rule_type = "NetworkRule"
+  #     rule_action = "Allow"
+  #     source_addresses = ["*"]
+  #     destination_addresses = ["*"]
+  #     protocols = ["*"]
+  #   }
+  # }
+  # ...
+}
+
+# Define the Azure Firewall
+resource "azurerm_firewall" "example" {
+  name                = "example-firewall"
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  sku {
+    name     = "AZFW_Virtual_WAN"
+    tier     = "Standard"
+  }
+
+  threat_intel_mode = "Alert"
+
+  # Reference the Firewall Policy
+  firewall_policy_id = azurerm_firewall_policy.example.id
+}
+
+# Output Firewall Information
+output "firewall_id" {
+  value = azurerm_firewall.example.id
+}
