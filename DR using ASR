@@ -1,0 +1,63 @@
+# Define the Azure provider
+provider "azurerm" {
+  features {}
+}
+
+# Create a resource group
+resource "azurerm_resource_group" "example" {
+  name     = "myResourceGroup"
+  location = "East US"
+}
+
+# Configure ASR Recovery Vault
+resource "azurerm_recovery_services_vault" "example" {
+  name                = "myRecoveryVault"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+}
+
+# Configure ASR Protection
+resource "azurerm_site_recovery_protected_vm" "example" {
+  name                = "myProtectedVM"
+  resource_group_name = azurerm_resource_group.example.name
+  recovery_vault_id   = azurerm_recovery_services_vault.example.id
+  source_vm_id        = "/subscriptions/{subscription_id}/resourceGroups/{source_resource_group}/providers/Microsoft.Compute/virtualMachines/{source_vm_name}"
+}
+
+# Configure ASR Replication Policy
+resource "azurerm_site_recovery_replication_policy" "example" {
+  name                    = "myReplicationPolicy"
+  recovery_vault_id       = azurerm_recovery_services_vault.example.id
+  recovery_proximity_text = "500 Miles"
+  replication_interval    = "PT15M"
+}
+
+# Create ASR Protection Container
+resource "azurerm_site_recovery_protection_container" "example" {
+  name               = "myProtectionContainer"
+  recovery_vault_id  = azurerm_recovery_services_vault.example.id
+  replication_policy_id = azurerm_site_recovery_replication_policy.example.id
+}
+
+# Create and Configure Validation Tests
+resource "azurerm_site_recovery_network_mapping" "example" {
+  name               = "myNetworkMapping"
+  recovery_vault_id  = azurerm_recovery_services_vault.example.id
+  recovery_container_id = azurerm_site_recovery_protection_container.example.id
+  source_network_id = "/subscriptions/{subscription_id}/resourceGroups/{source_resource_group}/providers/Microsoft.Network/virtualNetworks/{source_virtual_network_name}"
+}
+
+resource "azurerm_site_recovery_network_mapping" "example" {
+  name               = "myApplicationValidation"
+  recovery_vault_id  = azurerm_recovery_services_vault.example.id
+  recovery_container_id = azurerm_site_recovery_protection_container.example.id
+  source_network_id = "/subscriptions/{subscription_id}/resourceGroups/{source_resource_group}/providers/Microsoft.Network/virtualNetworks/{source_virtual_network_name}"
+}
+
+# Assign Validation Tests
+resource "azurerm_site_recovery_protection_container_mapping" "example" {
+  name               = "myProtectionContainerMapping"
+  recovery_vault_id  = azurerm_recovery_services_vault.example.id
+  protection_container_id = azurerm_site_recovery_protection_container.example.id
+  network_mapping_id = azurerm_site_recovery_network_mapping.example.id
+}
