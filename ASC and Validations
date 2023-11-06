@@ -1,0 +1,65 @@
+# Define the Azure provider
+provider "azurerm" {
+  features {}
+}
+
+# Enable Azure Security Center for the subscription
+resource "azurerm_security_center_contact" "example" {
+  name  = "example"
+  email = "security@example.com"
+  phone = "+1 (123) 456-7890"
+}
+
+resource "azurerm_security_center_subscription_pricing" "example" {
+  tier = "Standard"
+}
+
+# Configure Security Center policy
+resource "azurerm_security_center_policy" "example" {
+  name = "example-policy"
+
+  security_contact_ids = [azurerm_security_center_contact.example.id]
+
+  baseline_configuration {
+    os_type = "Linux"
+  }
+
+  security_policy {
+    # Define security policy settings here
+  }
+
+  auto_generated_recommendations {
+    # Define auto-generated recommendations settings here
+  }
+}
+
+# Define Security Center validation rules (Azure Policy)
+resource "azurerm_policy_definition" "example" {
+  name         = "example-policy-definition"
+  display_name = "Example Policy Definition"
+  policy_type  = "Custom"
+  mode         = "All"
+  description  = "Custom Azure Policy definition for validation."
+
+  metadata {
+    category = "Security Center"
+  }
+
+  policy_rule {
+    # Define the policy rule for validation
+  }
+}
+
+# Assign Security Center policy to a specific scope
+resource "azurerm_security_center_policy_assignment" "example" {
+  policy_id     = azurerm_security_center_policy.example.id
+  scope         = "subscriptions/{subscription_id}"
+  display_name = "example-assignment"
+}
+
+# Assign the validation rules to a specific scope
+resource "azurerm_policy_assignment" "example" {
+  name                 = "example-policy-assignment"
+  scope                = "subscriptions/{subscription_id}"
+  policy_definition_id = azurerm_policy_definition.example.id
+}
